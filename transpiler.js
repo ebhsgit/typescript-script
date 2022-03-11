@@ -12,22 +12,23 @@
 
     //Function loads each script and pushes its content into scripts.data
     var load = function (url) {
-        var xhr = window.ActiveXObject ? new window.ActiveXObject('Microsoft.XMLHTTP') : new window.XMLHttpRequest();;
-        xhr.open('GET', url, true);
-        if ('overrideMimeType' in xhr) xhr.overrideMimeType('text/plain');
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== 4) return;
-            if (xhr.status === 0 || xhr.status === 200) {
-                scripts.loaded++;
-                scripts.data.push(xhr.responseText);
-                scripts.name.push(url);
-                if (scripts.loaded === scripts.total) compile();
-                return xhr.responseText;
-            } else {
-                console.log('Could not load ' + url);
-            } //end if
-        }; //end xhr.onreadystatechange()
-        return xhr.send(null);
+        return new Promise((res) => {
+            var xhr = window.ActiveXObject ? new window.ActiveXObject('Microsoft.XMLHTTP') : new window.XMLHttpRequest();;
+            xhr.open('GET', url, true);
+            if ('overrideMimeType' in xhr) xhr.overrideMimeType('text/plain');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status === 0 || xhr.status === 200) {
+                    scripts.loaded++;
+                    scripts.data.push(xhr.responseText);
+                    scripts.name.push(url);
+                    res()
+                } else {
+                    console.log('Could not load ' + url);
+                } //end if
+            }; //end xhr.onreadystatechange()
+            return xhr.send(null);
+        })
     };
 
     //Compiles each of the scripts found within scripts.data
@@ -67,7 +68,7 @@
         body.appendChild(elem);
     };
 
-    (function () {
+    (async function () {
         //Polyfill for older browsers
         if (!window.console) window.console = {
             log: function () {}
@@ -78,7 +79,7 @@
             if (script[i].type == 'text/typescript') {
                 if (script[i].src) {
                     scripts.total++
-                    load(script[i].src);
+                    await load(script[i].src);
                 } else {
                     scripts.data.push(script[i].innerHTML);
                     scripts.name.push('innerHTML'+scripts.total);
